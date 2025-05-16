@@ -42,12 +42,9 @@ jobs:
 
       - name: Tag built images for GHCR
         run: |
-          docker tag gen-password:latest ghcr.io/${{ github.repository_owner }}/gen-password:${{ github.sha }}
-          
+          docker tag gen-password:latest ghcr.io/${OWNER_LC}/gen-password:${{ github.sha }}
 
       - name: Push images to GHCR
-        env:
-          OWNER: ${{ github.repository_owner }}
         run: |
           # Modifier les images dans stack.yaml pour utiliser ghcr.io/OWNER/nom-image
           yq e '.functions |= with_entries(.value.image = "ghcr.io/${OWNER_LC}/" + .key + ":${GITHUB_SHA}")' stack.yaml > stack-ghcr.yaml
