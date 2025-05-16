@@ -5,11 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'stack.yaml'
-      - '**/handler/**'
-      - '**/function/**'
-      - '**/Dockerfile'
-      - '.github/workflows/openfaas.yml'
+      - '*'
 
 jobs:
   build-and-push:
