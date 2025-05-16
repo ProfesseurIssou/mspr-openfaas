@@ -1,9 +1,13 @@
-name: Build and Publish OpenFaaS Function
+name: Build and Publish OpenFaaS Functions to GHCR
 
 on:
   push:
     branches:
       - main
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build-and-push:
@@ -19,26 +23,22 @@ jobs:
       - name: Pull OpenFaaS templates
         run: faas-cli template pull
 
-      - name: Set up QEMU (multi-arch build)
-        uses: docker/setup-qemu-action@v2
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Build and Push OpenFaaS function(s)
+      - name: Build functions (OpenFaaS)
+        run: faas-cli build -f stack.yaml
+
+      - name: Push images to GHCR
+        env:
+          OWNER: ${{ github.repository_owner }}
         run: |
-          faas-cli publish --platforms linux/amd64,linux/arm/v7,linux/arm64
-
-      # Optionnel : déployer automatiquement après le push
-      # - name: Login to OpenFaaS Gateway
-      #   run: echo "${{ secrets.OPENFAAS_PASSWORD }}" | faas-cli login --gateway ${{ secrets.OPENFAAS_URL }} --password-stdin
-
-      # - name: Deploy to OpenFaaS
-      #   run: faas-cli deploy --gateway ${{ secrets.OPENFAAS_URL }}
+          # Modifier les images dans stack.yaml pour utiliser ghcr.io/OWNER/nom-image
+          yq e '.functions |= with_entries(.value.image = "ghcr.io/${OWNER}/" + .key + ":${GITHUB_SHA}")' stack.yaml > stack-ghcr.yaml
+          faas-cli push -f stack-ghcr.yaml
