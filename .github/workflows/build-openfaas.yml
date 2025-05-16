@@ -40,6 +40,11 @@ jobs:
       - name: Build functions (OpenFaaS)
         run: faas-cli build -f stack.yaml
 
+      - name: Tag built images for GHCR
+        run: |
+          docker tag gen-password:latest ghcr.io/${{ github.repository_owner }}/gen-password:${{ github.sha }}
+          
+
       - name: Push images to GHCR
         env:
           OWNER: ${{ github.repository_owner }}
