@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set lower case owner name
+        run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
+        env:
+          OWNER: ${{ github.repository_owner }}
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -40,5 +45,5 @@ jobs:
           OWNER: ${{ github.repository_owner }}
         run: |
           # Modifier les images dans stack.yaml pour utiliser ghcr.io/OWNER/nom-image
-          yq e '.functions |= with_entries(.value.image = "ghcr.io/${OWNER}/" + .key + ":${GITHUB_SHA}")' stack.yaml > stack-ghcr.yaml
+          yq e '.functions |= with_entries(.value.image = "ghcr.io/${OWNER_LC}/" + .key + ":${GITHUB_SHA}")' stack.yaml > stack-ghcr.yaml
           faas-cli push -f stack-ghcr.yaml
